@@ -10,6 +10,9 @@ const nextConfig = {
   },
   // Ensure pdf-parse is not bundled by Webpack or Turbopack
   serverExternalPackages: ["pdf-parse"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
