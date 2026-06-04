@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(uuid())
+  clerkUserId     String           @unique
+  email           String           @unique
+  name            String?
+  imageUrl        String?
+  industry        String?
+  industryInsight IndustryInsight? @relation(fields: [industry], references: [industry])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Profile fields
+  bio             String?
+  experience      Int?
+  targetRole      String?
+  readinessScore  Float?           @default(0)
+  
+  // Relations
+  skills          String[]
+  assessments     Assessment[]
+  resume          Resume?
+  coverLetter     CoverLetter[]
+  
+  // New AI Features Relations
+  roadmaps        Roadmap[]
+  skillAnalysis   SkillAnalysis[]
+  chatHistory     ChatHistory[]
+  avatarSessions  AvatarSession[]
+}
+
+model Assessment {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  quizScore         Float     // Overall score
+  communicationScore Float?   // Granular score for Mock Interview
+  technicalScore    Float?    // Granular score for Mock Interview
+  confidenceScore   Float?    // Granular score for Mock Interview
+  questions         Json[]    // Array of {question, answer, userAnswer, isCorrect}
+  category          String    // "Technical", "Behavioral", "HR", etc.
+  improvementTip    String?   // AI-generated improvement tip
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Resume {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  content         String    @db.Text
+  parsedText      String?   @db.Text // Extracted text from PDF
+  atsScore        Float?
+  resumeQualityScore Float?
+  missingKeywords String[]
+  feedback        String?   @db.Text
+  checklist       Json?     // Improvement checklist
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CoverLetter {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  content         String    @db.Text
+  jobDescription  String?   @db.Text
+  companyName     String
+  jobTitle        String
+  status          String    @default("draft")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model IndustryInsight {
+  id                String    @id @default(cuid())
+  industry          String    @unique
+  
+  users             User[]
+  
+  salaryRanges      Json[]
+  
+  growthRate        Float
+  demandLevel       String
+  topSkills         String[]
+  
+  marketOutlook     String
+  keyTrends         String[]
+  
+  recommendedSkills String[]
+  
+  lastUpdated       DateTime  @default(now())
+  nextUpdate        DateTime
+
+  @@index([industry])
+}
+
+// New Models for Upwise AI Features
+
+model Roadmap {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  targetRole      String
+  phases          RoadmapPhase[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model RoadmapPhase {
+  id              String         @id @default(cuid())
+  roadmapId       String
+  roadmap         Roadmap        @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  order           Int
+  tasks           RoadmapTask[]
+}
+
+model RoadmapTask {
+  id              String         @id @default(cuid())
+  phaseId         String
+  phase           RoadmapPhase   @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  isCompleted     Boolean        @default(false)
+  estimatedTime   String?
+}
+
+model SkillAnalysis {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  targetRole      String
+  currentSkills   String[]
+  missingSkills   String[]
+  prioritySkills  String[]
+  learningPlan    Json?     // Structured learning plan
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model ChatHistory {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  role            String    // "user" or "assistant"
+  content         String    @db.Text
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AvatarSession {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  title           String?
+  messages        AvatarMessage[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model AvatarMessage {
+  id              String         @id @default(cuid())
+  sessionId       String
+  session         AvatarSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role            String         // "user" or "assistant"
+  content         String         @db.Text
+  createdAt       DateTime       @default(now())
+}
