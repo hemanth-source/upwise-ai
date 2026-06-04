@@ -260,7 +260,7 @@ export default function MockInterviewPage() {
           </div>
           <CardContent className="p-8">
             <h2 className="text-2xl font-semibold mb-8 text-center text-slate-100">
-              "{questions[currentQIndex]}"
+              &quot;{questions[currentQIndex]}&quot;
             </h2>
             
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 mb-6">
@@ -344,7 +344,7 @@ export default function MockInterviewPage() {
                       {q.question}
                     </h4>
                     <div className="ml-7 space-y-2">
-                      <p className="text-sm text-slate-400 italic">" {q.userAnswer} "</p>
+                      <p className="text-sm text-slate-400 italic">&quot; {q.userAnswer} &quot;</p>
                       <p className="text-sm text-indigo-300 font-medium pt-2 border-t border-slate-700">{q.feedback}</p>
                     </div>
                   </div>

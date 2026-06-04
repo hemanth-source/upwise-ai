@@ -63,7 +63,7 @@ export default function AvatarCoachPage() {
                   <Video className="h-12 w-12 text-slate-500" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-300">Avatar Offline</h3>
-                <p className="text-sm text-slate-500 mt-2">Click "Start Coaching Session" to connect to TruGen AI.</p>
+                <p className="text-sm text-slate-500 mt-2">Click &quot;Start Coaching Session&quot; to connect to TruGen AI.</p>
               </div>
             ) : (
               <div className="relative w-full h-full min-h-[500px]">
