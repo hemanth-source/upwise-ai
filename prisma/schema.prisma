@@ -35,6 +35,7 @@ model User {
   skillAnalysis   SkillAnalysis[]
   chatHistory     ChatHistory[]
   avatarSessions  AvatarSession[]
+  jobApplications JobApplication[]
 }
 
 model Assessment {
@@ -186,4 +187,19 @@ model AvatarMessage {
   role            String         // "user" or "assistant"
   content         String         @db.Text
   createdAt       DateTime       @default(now())
+}
+
+model JobApplication {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  companyName     String
+  jobTitle        String
+  status          String    @default("Applied") // Applied, Interviewing, Offer, Rejected
+  url             String?
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
 }

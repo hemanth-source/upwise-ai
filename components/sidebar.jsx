@@ -15,6 +15,9 @@ import {
   ChevronRight,
   Menu,
   PenBox,
+  Mail,
+  Linkedin,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -61,6 +64,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       name: "AI Mock Interview",
       path: "/mock-interview",
       icon: <GraduationCap className="h-5 w-5" />,
+    },
+    {
+      name: "Networking Emails",
+      path: "/networking",
+      icon: <Mail className="h-5 w-5" />,
+    },
+    {
+      name: "LinkedIn Optimizer",
+      path: "/linkedin-optimizer",
+      icon: <Linkedin className="h-5 w-5" />,
+    },
+    {
+      name: "Application Tracker",
+      path: "/job-tracker",
+      icon: <Briefcase className="h-5 w-5" />,
     },
   ];
 
