@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { checkUser } from "@/lib/checkUser";
-
+import { ThemeToggle } from "./theme-toggle";
 export default async function Header() {
   await checkUser();
 
@@ -62,6 +62,8 @@ export default async function Header() {
               <Button variant="outline">Sign In</Button>
             </SignInButton>
           </SignedOut>
+
+          <ThemeToggle />
 
           <SignedIn>
             <UserButton

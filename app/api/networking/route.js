@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { db } from "@/lib/prisma";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -34,10 +35,54 @@ Format the output as plain text suitable for copying into an email client.`;
     const result = await model.generateContent(prompt);
     const emailContent = result.response.text();
 
+    const dbUser = await db.user.findUnique({
+      where: { clerkUserId: user.id }
+    });
+
+    if (dbUser) {
+      await db.networkingEmail.create({
+        data: {
+          userId: dbUser.id,
+          targetRole: targetRole || "",
+          targetCompany: targetCompany || "",
+          recipientName: recipientName || "",
+          goal: goal || "",
+          yourBackground: yourBackground || "",
+          generatedEmail: emailContent
+        }
+      });
+    }
+
     return NextResponse.json({ email: emailContent });
 
   } catch (error) {
     console.error("Networking Email Generation Error:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+export async function GET(req) {
+  try {
+    const user = await currentUser();
+    if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
+    const dbUser = await db.user.findUnique({
+      where: { clerkUserId: user.id }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json([]);
+    }
+
+    const history = await db.networkingEmail.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: "desc" },
+      take: 20
+    });
+
+    return NextResponse.json(history);
+  } catch (error) {
+    console.error("Fetch Networking Email History Error:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

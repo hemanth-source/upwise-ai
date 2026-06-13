@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -11,13 +11,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Brain, Target, BookOpen, AlertCircle } from "lucide-react";
+import { Brain, Target, BookOpen, AlertCircle, History, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function SkillGapPage() {
   const [targetRole, setTargetRole] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [historyList, setHistoryList] = useState([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/skill-gap");
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryList(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+    fetchHistory();
+  }, []);
 
   const analyzeSkills = async () => {
     if (!targetRole.trim()) return toast.error("Please enter a target role");
@@ -34,6 +54,10 @@ export default function SkillGapPage() {
 
       const data = await res.json();
       setResults(data);
+      
+      // Refresh history from DB
+      await fetchHistory();
+      
       toast.success("Skill gap analysis complete!");
     } catch (error) {
       toast.error(error.message || "An error occurred");
@@ -44,6 +68,54 @@ export default function SkillGapPage() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-5xl">
+      <div className="mb-10 relative">
+        <div className="absolute right-0 top-0">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">History</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Skill Gap History</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {historyList.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">No history yet.</p>
+                ) : (
+                  historyList.map((item) => (
+                    <Card key={item.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => {
+                      setTargetRole(item.targetRole);
+                      setResults({
+                        currentSkills: item.currentSkills,
+                        missingSkills: item.missingSkills,
+                        prioritySkills: item.prioritySkills,
+                        learningPlan: item.learningPlan,
+                        targetRole: item.targetRole
+                      });
+                      toast.success("Loaded from history!");
+                    }}>
+                      <CardContent className="p-4 flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-semibold text-sm line-clamp-1">{item.targetRole}</h4>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                            <Clock className="h-3 w-3" /> {new Date(item.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          Missing: {item.missingSkills?.length || 0} skills
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
       <div className="mb-8 flex flex-col md:flex-row gap-6 items-start md:items-end justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">

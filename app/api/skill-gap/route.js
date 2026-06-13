@@ -91,3 +91,29 @@ export async function POST(req) {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
+
+export async function GET(req) {
+  try {
+    const user = await currentUser();
+    if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
+    const dbUser = await db.user.findUnique({
+      where: { clerkUserId: user.id }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json([]);
+    }
+
+    const history = await db.skillAnalysis.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: "desc" },
+      take: 20
+    });
+
+    return NextResponse.json(history);
+  } catch (error) {
+    console.error("Fetch Skill Gap History Error:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}

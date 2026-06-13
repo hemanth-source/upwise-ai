@@ -49,13 +49,15 @@ const HeroSection = () => {
         </div>
         <div className="hero-image-wrapper mt-5 md:mt-0">
           <div ref={imageRef} className="hero-image">
-            <Image
-              src="/banner.jpeg"
-              width={1280}
-              height={720}
-              alt="Dashboard Preview"
+            <video
+              src="/banner.mp4"
+              width="1280"
+              height="720"
+              autoPlay
+              loop
+              muted
+              playsInline
               className="rounded-lg shadow-2xl border mx-auto"
-              priority
             />
           </div>
         </div>

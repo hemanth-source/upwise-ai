@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Copy, CheckCircle } from "lucide-react";
+import { Loader2, Mail, Copy, CheckCircle, History, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function NetworkingEmailGenerator() {
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,25 @@ export default function NetworkingEmailGenerator() {
     goal: "",
     yourBackground: ""
   });
+  const [isMounted, setIsMounted] = useState(false);
+  const [historyList, setHistoryList] = useState([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/networking");
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryList(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
+
+  useEffect(() => {
+    setIsMounted(true);
+    fetchHistory();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,6 +60,10 @@ export default function NetworkingEmailGenerator() {
       
       const data = await response.json();
       setGeneratedEmail(data.email);
+      
+      // Refresh history from DB
+      await fetchHistory();
+      
       toast.success("Email generated successfully!");
     } catch (error) {
       toast.error(error.message);
@@ -57,7 +81,51 @@ export default function NetworkingEmailGenerator() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-4xl">
-      <div className="mb-10 text-center">
+      <div className="mb-10 text-center relative">
+        <div className="absolute right-0 top-0">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">History</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Email Generation History</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {historyList.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">No history yet.</p>
+                ) : (
+                  historyList.map((item) => (
+                    <Card key={item.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => {
+                      setFormData({
+                        targetRole: item.targetRole || "",
+                        targetCompany: item.targetCompany || "",
+                        recipientName: item.recipientName || "",
+                        goal: item.goal || "",
+                        yourBackground: item.yourBackground || ""
+                      });
+                      setGeneratedEmail(item.generatedEmail);
+                      toast.success("Loaded from history!");
+                    }}>
+                      <CardContent className="p-4 flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-semibold text-sm line-clamp-1">{item.targetRole} @ {item.targetCompany}</h4>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                            <Clock className="h-3 w-3" /> {new Date(item.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{item.generatedEmail}</p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         <h1 className="text-4xl font-bold flex items-center justify-center gap-3">
           <Mail className="h-10 w-10 text-primary" />
           Cold Networking Email Generator

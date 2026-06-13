@@ -4,22 +4,40 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Map, MapPin, CheckCircle, Circle, Clock } from "lucide-react";
+import { Map, MapPin, CheckCircle, Circle, Clock, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function RoadmapPage() {
   const [targetRole, setTargetRole] = useState("");
   const [generating, setGenerating] = useState(false);
   const [roadmap, setRoadmap] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [historyList, setHistoryList] = useState([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/roadmap/history");
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryList(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
 
   useEffect(() => {
+    setIsMounted(true);
+    fetchHistory();
+
     const fetchRoadmap = async () => {
       try {
         const res = await fetch("/api/roadmap");
         if (res.ok) {
           const data = await res.json();
-          if (data) {
+          if (data && Object.keys(data).length > 0) {
             setRoadmap(data);
             setTargetRole(data.targetRole || "");
           }
@@ -46,6 +64,10 @@ export default function RoadmapPage() {
 
       const data = await res.json();
       setRoadmap(data);
+      
+      // Refresh history from DB
+      await fetchHistory();
+      
       toast.success("Career roadmap generated!");
     } catch (error) {
       toast.error(error.message || "An error occurred");
@@ -82,7 +104,47 @@ export default function RoadmapPage() {
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-4xl">
-      <div className="mb-10 text-center">
+      <div className="mb-10 text-center relative">
+        <div className="absolute right-0 top-0">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">History</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Roadmap History</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {historyList.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">No history yet.</p>
+                ) : (
+                  historyList.map((item) => (
+                    <Card key={item.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => {
+                      setTargetRole(item.targetRole);
+                      setRoadmap(item);
+                      toast.success("Loaded from history!");
+                    }}>
+                      <CardContent className="p-4 flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-semibold text-sm line-clamp-1">{item.targetRole}</h4>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                            <Clock className="h-3 w-3" /> {new Date(item.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          Phases: {item.phases?.length || 0}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="bg-blue-900/30 p-4 rounded-full inline-block mb-4 border border-blue-500/30">
           <Map className="h-10 w-10 text-blue-400" />
         </div>
